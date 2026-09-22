@@ -471,4 +471,6 @@ loadPeopleFromSupabase();
 loadDeviceStatus();
 setInterval(loadDeviceStatus, 5000);
 
-startDeviceSession();
+if (new URLSearchParams(window.location.search).get("connect") === "true") {
+  startDeviceSession();
+}
