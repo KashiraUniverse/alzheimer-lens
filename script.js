@@ -5,8 +5,36 @@ const $$ = (s) => [...document.querySelectorAll(s)];
    Paste the same Supabase URL + publishable key you used in your previous working copy.
    Never put a secret/service-role key here. */
 const SUPABASE_URL = "https://jikiymnrbbxmkltukqfh.supabase.co";
-const SUPABASE_KEY = "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
+const SUPABASE_KEY = "sb_publishable_aPLOfYb-c9uiaMLdFw6r1Q_2nLcKt5N";
+async function startDeviceSession() {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/device_command?id=eq.1`,
+      {
+        method: "PATCH",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          start_session: true,
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
 
+    if (!response.ok) {
+      console.error("Gagal memulai device session:", response.status);
+      return;
+    }
+
+    console.log("✓ Device session started");
+
+  } catch (error) {
+    console.error("Device session error:", error);
+  }
+}
 const defaultPeople = [
   {id:"P001", name:"Maria", relationship:"Caregiver", phone:"+62 812-0000-0000", sync:"Synced", photo:"", date:"Today"},
   {id:"P002", name:"John", relationship:"Family", phone:"+62 813-0000-0000", sync:"Synced", photo:"", date:"Yesterday"}
@@ -442,3 +470,5 @@ renderLatest();
 loadPeopleFromSupabase();
 loadDeviceStatus();
 setInterval(loadDeviceStatus, 5000);
+
+startDeviceSession();
