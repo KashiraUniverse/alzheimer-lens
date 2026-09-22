@@ -377,42 +377,131 @@ $("#scanBtn").onclick = () => {
   }, 1800);
 };
 
-function getGPS() {
-  if (!navigator.geolocation) {
-    setDemoGPS();
-    return;
-  }
+/* =========================
+   GPS — RASPBERRY PI → SUPABASE
+   ========================= */
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      currentLocation = {lat:pos.coords.latitude, lng:pos.coords.longitude};
-      updateGPSUI();
-      toast("GPS location updated");
-    },
-    () => {
+async function getGPS() {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/gps_status?id=eq.1&select=*`,
+      {
+        headers: {
+          "apikey": SUPABASE_KEY
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.error(
+        "Gagal mengambil GPS Raspberry Pi:",
+        response.status
+      );
+
       setDemoGPS();
-      toast("GPS unavailable — using Demo Location");
-    },
-    {enableHighAccuracy:true, timeout:8000}
-  );
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.length || !data[0].valid) {
+      console.warn(
+        "GPS Raspberry Pi belum valid"
+      );
+
+      setDemoGPS();
+      return;
+    }
+
+    const gps = data[0];
+
+    currentLocation = {
+      lat: Number(gps.lat),
+      lng: Number(gps.lng)
+    };
+
+    updateGPSUI();
+
+    console.log(
+      "✓ GPS Raspberry Pi:",
+      currentLocation.lat,
+      currentLocation.lng
+    );
+
+  } catch (error) {
+    console.error(
+      "GPS Supabase error:",
+      error
+    );
+
+    setDemoGPS();
+  }
 }
 
+
 function setDemoGPS() {
-  currentLocation = {lat:-6.2088, lng:106.8456};
+  currentLocation = {
+    lat: -6.2088,
+    lng: 106.8456
+  };
+
   updateGPSUI(true);
 }
 
-function updateGPSUI(demo=false) {
-  const text = demo ? "Demo Location" : "Current location";
-  const c = `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`;
+
+function updateGPSUI(demo = false) {
+  const text =
+    demo
+      ? "Demo Location"
+      : "Raspberry Pi GPS";
+
+  const c =
+    `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`;
+
   $("#locationText").textContent = text;
-  $("#coords").textContent = c + (demo ? " · Demo coordinates" : " · Browser GPS");
+
+  $("#coords").textContent =
+    c +
+    (demo
+      ? " · Demo coordinates"
+      : " · Pi GPS");
+
   $("#safetyLocation").textContent = text;
-  $("#safetyCoords").textContent = c + (demo ? " · Demo coordinates" : " · Browser GPS");
+
+  $("#safetyCoords").textContent =
+    c +
+    (demo
+      ? " · Demo coordinates"
+      : " · Pi GPS");
 }
 
-$("#refreshGps").onclick = getGPS;
-$("#safetyGpsBtn").onclick = getGPS;
+
+$("#refreshGps").onclick = async () => {
+  await getGPS();
+
+  if (
+    currentLocation &&
+    !$("#coords").textContent.includes(
+      "Demo coordinates"
+    )
+  ) {
+    toast("Raspberry Pi GPS updated");
+  }
+};
+
+
+$("#safetyGpsBtn").onclick = async () => {
+  await getGPS();
+
+  if (
+    currentLocation &&
+    !$("#safetyCoords").textContent.includes(
+      "Demo coordinates"
+    )
+  ) {
+    toast("Raspberry Pi GPS updated");
+  }
+};
 
 $$(".filter").forEach(b => b.onclick = () => {
   $$(".filter").forEach(x => x.classList.remove("active"));
@@ -469,7 +558,10 @@ renderMemories();
 renderLatest();
 loadPeopleFromSupabase();
 loadDeviceStatus();
+getGPS();
+
 setInterval(loadDeviceStatus, 5000);
+setInterval(getGPS, 5000);
 
 if (new URLSearchParams(window.location.search).get("connect") === "true") {
   startDeviceSession();
