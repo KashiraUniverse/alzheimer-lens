@@ -340,44 +340,90 @@ $("#registerForm").onsubmit = async e => {
   }, 1200);
 };
 
-$("#scanBtn").onclick = () => {
-  const scanner = $("#scanner"), result = $("#recognitionResult"), btn = $("#scanBtn");
+$("#scanBtn").onclick = async () => {
+  const scanner = $("#scanner");
+  const result = $("#recognitionResult");
+  const btn = $("#scanBtn");
+
   scanner.classList.add("scanning");
   btn.disabled = true;
-  btn.textContent = "SCANNING…";
+  btn.textContent = "STARTING CAMERA…";
   result.classList.add("hidden");
 
-  setTimeout(() => {
-    scanner.classList.remove("scanning");
-    btn.disabled = false;
-    btn.textContent = "SCAN AGAIN";
+  // Kirim command ke Raspberry Pi
+  await startDeviceSession();
 
-    const p = people[0] || {name:"Maria", relationship:"Caregiver"};
+  btn.textContent = "CONNECTING…";
+
+  await new Promise(resolve => setTimeout(resolve, 1200));
+
+  btn.textContent = "SCANNING…";
+
+  // Tunggu hasil recognition dari Raspberry Pi
+  const recognition = await waitForRecognition(20, 1000);
+
+  scanner.classList.remove("scanning");
+  btn.disabled = false;
+  btn.textContent = "SCAN AGAIN";
+
+  if (recognition && recognition.recognized_name) {
+
+    const confidence =
+      recognition.recognition_confidence != null
+        ? Math.round(recognition.recognition_confidence * 100)
+        : 0;
+
     result.innerHTML = `
       <span class="pill green">✓ PERSON DETECTED</span>
-      <h2>${escapeHtml(p.name)}</h2>
-      <p class="muted">${escapeHtml(p.relationship)}</p>
-      <div class="confidence">94% confidence</div>
-      <p class="muted">Just now · ${currentLocation ? currentLocation.lat.toFixed(4)+", "+currentLocation.lng.toFixed(4) : "Demo location"}</p>
+      <h2>${escapeHtml(recognition.recognized_name)}</h2>
+      <p class="muted">
+        ${escapeHtml(recognition.recognized_relation || "Familiar person")}
+      </p>
+      <div class="confidence">${confidence}% confidence</div>
+      <p class="muted">
+        Just now · ${
+          currentLocation
+            ? currentLocation.lat.toFixed(4) + ", " + currentLocation.lng.toFixed(4)
+            : "Location unavailable"
+        }
+      </p>
       <button id="saveMemory" class="big-btn">SAVE TO MEMORIES</button>
     `;
+
     result.classList.remove("hidden");
 
     $("#saveMemory").onclick = () => {
       memories.unshift({
-        type:"People",
-        title:`${p.name} detected`,
-        desc:p.relationship,
-        time:new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}),
-        location:currentLocation ? "Current location" : "Demo location"
+        type: "People",
+        title: `${recognition.recognized_name} detected`,
+        desc: recognition.recognized_relation || "Familiar person",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        }),
+        location: currentLocation
+          ? "Current location"
+          : "Location unavailable"
       });
+
       save();
       renderMemories();
       toast("Recognition saved to Memories");
     };
-  }, 1800);
-};
 
+  } else {
+
+    result.innerHTML = `
+      <span class="pill">NO MATCH</span>
+      <h2>Person not recognized</h2>
+      <p class="muted">
+        The person could not be matched with a registered face.
+      </p>
+    `;
+
+    result.classList.remove("hidden");
+  }
+};
 async function getGPS() {
   try {
     const response = await fetch(
