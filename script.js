@@ -207,13 +207,14 @@ async function loadPeopleFromSupabase() {
     const data = await response.json();
 
     people = data.map(p => ({
-      id: "P" + p.id,
-      name: p.name,
-      relationship: p.relation,
-      phone: p.phone || "",
-      photo: p.photo_url || null,
-      sync: "Synced"
-    }));
+  id: "P" + p.id,
+  name: p.name,
+  relationship: p.relation,
+  phone: p.phone || "",
+  telegramChatId: p.telegram_chat_id || "",
+  photo: p.photo_url || null,
+  sync: "Synced"
+}));
 
     save();
     await renderPeople();
