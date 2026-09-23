@@ -68,6 +68,33 @@ function showPage(id) {
   window.scrollTo({top:0, behavior:"smooth"});
 }
 
+async function loadReminders() {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/reminders?select=*&order=reminder_time.asc`,
+      {
+        headers: {
+          "apikey": SUPABASE_KEY
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Gagal mengambil reminders:", response.status);
+      return;
+    }
+
+    const reminders = await response.json();
+    console.log("✓ Reminders:", reminders);
+
+    return reminders;
+  } catch (error) {
+    console.error("Reminder error:", error);
+  }
+}
+
+loadReminders();
+
 $$("[data-page]").forEach(el => el.addEventListener("click", () => showPage(el.dataset.page)));
 
 async function uploadPhotoToSupabase(file) {
