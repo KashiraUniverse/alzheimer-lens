@@ -642,47 +642,42 @@ $("#scanBtn").onclick = async () => {
     result.classList.remove("hidden");
   }
 };
-async function getGPS() {
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/gps_status?id=eq.1&select=*`,
-      {
-        headers: {
-          "apikey": SUPABASE_KEY
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.error("Gagal mengambil GPS Raspberry Pi");
-      return;
-    }
-
-    const data = await response.json();
-
-    if (!data.length || !data[0].valid) {
-      console.error("GPS Raspberry Pi belum valid");
-      return;
-    }
-
-    const gps = data[0];
-
-    currentLocation = {
-      lat: Number(gps.lat),
-      lng: Number(gps.lng)
-    };
-
-    updateGPSUI();
-
-    console.log(
-      "✓ GPS Raspberry Pi:",
-      currentLocation.lat,
-      currentLocation.lng
-    );
-
-  } catch (error) {
-    console.error("GPS Raspberry Pi error:", error);
+function getGPS() {
+  if (!navigator.geolocation) {
+    alert("Browser tidak mendukung GPS.");
+    return;
   }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      currentLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+
+      updateGPSUI();
+
+      console.log(
+        "✓ Browser GPS:",
+        currentLocation.lat,
+        currentLocation.lng
+      );
+    },
+    (error) => {
+      console.error("GPS error:", error);
+
+      if (error.code === 1) {
+        alert("Izin lokasi ditolak. Izinkan lokasi untuk website ini.");
+      } else {
+        alert("Lokasi tidak bisa diambil.");
+      }
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
 }
 
 function setDemoGPS() {
