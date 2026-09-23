@@ -299,6 +299,7 @@ async function addReminder() {
           "Prefer": "return=representation"
         },
         body: JSON.stringify({
+          id: Date.now(),
           text: text,
           time: time
         })
