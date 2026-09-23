@@ -281,6 +281,61 @@ async function loadDeviceStatus() {
   }
 }
 
+async function addReminder() {
+  const title = prompt("Reminder apa?");
+  if (!title) return;
+
+  const type = prompt("Type: Medication / Meal / Appointment", "Medication");
+  if (!type) return;
+
+  const time = prompt("Jam (HH:MM)", "08:00");
+  if (!time) return;
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/reminders`,
+      {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({
+          title: title,
+          reminder_type: type,
+          reminder_time: time,
+          enabled: true
+        })
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Gagal menyimpan reminder:", await response.text());
+      alert("Reminder gagal disimpan.");
+      return;
+    }
+
+    alert("✓ Reminder berhasil disimpan!");
+    await loadReminders();
+
+  } catch (error) {
+    console.error("Reminder error:", error);
+  }
+}
+
+const memoryList = $("#memoryList");
+
+if (memoryList && !$("#addReminderBtn")) {
+  const btn = document.createElement("button");
+  btn.id = "addReminderBtn";
+  btn.className = "big-btn";
+  btn.textContent = "+ ADD REMINDER";
+  btn.onclick = addReminder;
+
+  memoryList.parentElement.insertBefore(btn, memoryList);
+}
+
 function renderMemories(filter="All") {
   const list = $("#memoryList");
   const items = filter === "All" ? memories : memories.filter(m => m.type === filter);
