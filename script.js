@@ -309,6 +309,23 @@ async function addReminder() {
   const text = prompt("Reminder apa?");
   if (!text) return;
 
+  const category = prompt(
+    "Category:\n1. Medication\n2. Meal\n3. Appointment\n4. Rest\n5. Other",
+    "Medication"
+  );
+
+  if (!category) return;
+
+  const categoryMap = {
+    "1": "Medication",
+    "2": "Meal",
+    "3": "Appointment",
+    "4": "Rest",
+    "5": "Other"
+  };
+
+  const reminderType = categoryMap[category] || category;
+
   const time = prompt("Jam (HH:MM)", "08:00");
   if (!time) return;
 
@@ -323,14 +340,14 @@ async function addReminder() {
           "Prefer": "return=representation"
         },
         body: JSON.stringify({
-  id: Date.now(),
-  title: text,
-  text: text,
-  time: time,
-  reminder_type: "Medication",
-  reminder_time: time,
-  enabled: true
-})
+          id: Date.now(),
+          title: text,
+          text: text,
+          time: time,
+          reminder_type: reminderType,
+          reminder_time: time,
+          enabled: true
+        })
       }
     );
 
