@@ -800,3 +800,5 @@ setInterval(loadDeviceStatus, 5000);
 if (new URLSearchParams(window.location.search).get("connect") === "true") {
   startDeviceSession();
 }
+
+getGPS();
