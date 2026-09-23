@@ -378,24 +378,47 @@ $("#scanBtn").onclick = () => {
   }, 1800);
 };
 
-function getGPS() {
-  if (!navigator.geolocation) {
-    setDemoGPS();
-    return;
-  }
+async function getGPS() {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/gps_status?id=eq.1&select=*`,
+      {
+        headers: {
+          "apikey": SUPABASE_KEY
+        }
+      }
+    );
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      currentLocation = {lat:pos.coords.latitude, lng:pos.coords.longitude};
-      updateGPSUI();
-      toast("GPS location updated");
-    },
-    () => {
-      setDemoGPS();
-      toast("GPS unavailable — using Demo Location");
-    },
-    {enableHighAccuracy:true, timeout:8000}
-  );
+    if (!response.ok) {
+      console.error("Gagal mengambil GPS Raspberry Pi");
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.length || !data[0].valid) {
+      console.error("GPS Raspberry Pi belum valid");
+      return;
+    }
+
+    const gps = data[0];
+
+    currentLocation = {
+      lat: Number(gps.lat),
+      lng: Number(gps.lng)
+    };
+
+    updateGPSUI();
+
+    console.log(
+      "✓ GPS Raspberry Pi:",
+      currentLocation.lat,
+      currentLocation.lng
+    );
+
+  } catch (error) {
+    console.error("GPS Raspberry Pi error:", error);
+  }
 }
 
 function setDemoGPS() {
