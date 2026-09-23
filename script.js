@@ -85,9 +85,33 @@ async function loadReminders() {
     }
 
     const reminders = await response.json();
+
     console.log("✓ Reminders:", reminders);
 
+    let reminderList = $("#reminderList");
+
+    if (!reminderList) {
+      reminderList = document.createElement("div");
+      reminderList.id = "reminderList";
+      reminderList.style.marginBottom = "20px";
+
+      const memoryList = $("#memoryList");
+      memoryList.parentElement.insertBefore(
+        reminderList,
+        memoryList
+      );
+    }
+
+    reminderList.innerHTML = reminders.map(r => `
+      <div class="timeline-item">
+        <b>💊 ${escapeHtml(r.title || r.text || "Reminder")}</b>
+        <span>${escapeHtml(r.reminder_type || "Reminder")}</span>
+        <small>⏰ ${escapeHtml(r.reminder_time || r.time || "--:--")}</small>
+      </div>
+    `).join("");
+
     return reminders;
+
   } catch (error) {
     console.error("Reminder error:", error);
   }
