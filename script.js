@@ -316,7 +316,7 @@ const battery = Math.max(
   0,
   Math.min(
     100,
-    Math.round(100 - (elapsedHours / 0.01) * 100)
+    Math.round(100 - elapsedHours * 20)
   )
 );
 
