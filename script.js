@@ -367,9 +367,9 @@ function renderMemories(filter = "All") {
   if (!list) return;
 
   const memoryItems = memories.map(m => ({
-    ...m,
-    itemType: m.type || "People"
-  }));
+  ...m,
+  itemType: m.type || "Other"
+}));
 
   const reminderItems = window.allReminders || [];
 
