@@ -360,7 +360,7 @@ $("#scanBtn").onclick = async () => {
   btn.textContent = "SCANNING…";
 
   // Tunggu hasil recognition dari Raspberry Pi
-  const recognition = await waitForRecognition(20, 1000);
+  const recognition = await waitForRecognition(8, 1000);
 
   scanner.classList.remove("scanning");
   btn.disabled = false;
