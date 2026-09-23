@@ -518,33 +518,71 @@ $("#testConnection").onclick = () => {
 };
 
 $("#sosBtn").onclick = async () => {
-  if (!confirm("Activate Emergency SOS? Demo Mode will not send a real SMS or call.")) {
+  if (!confirm("Activate Emergency SOS?")) {
     return;
   }
 
-  // Pastikan ambil lokasi terbaru dari Raspberry Pi
+  // Ambil GPS terbaru dari Raspberry Pi
   await getGPS();
 
-  const c = currentLocation
-    ? `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`
-    : "GPS unavailable";
-
   if (!currentLocation) {
-    alert(
-      "SOS cannot get the Raspberry Pi GPS location yet."
-    );
+    alert("GPS Raspberry Pi belum tersedia.");
     return;
   }
 
-  toast("SOS alert simulated successfully");
-
-  alert(
-    `SOS ACTIVATED\n\n` +
-    `Primary contact: Maria\n` +
-    `Location: ${c}\n\n` +
-    `Source: Raspberry Pi GPS\n` +
-    `Demo Mode: no real SMS or call was sent.`
+  // Cari kontak yang punya Telegram Chat ID
+  const contact = people.find(
+    p => p.telegramChatId
   );
+
+  if (!contact) {
+    alert("Belum ada kontak Telegram yang terdaftar.");
+    return;
+  }
+
+  const lat = currentLocation.lat;
+  const lng = currentLocation.lng;
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/send-sos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          chat_id: contact.telegramChatId,
+          name: contact.name,
+          lat: lat,
+          lng: lng
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      console.error("SOS Telegram error:", data);
+      alert("SOS gagal dikirim ke Telegram.");
+      return;
+    }
+
+    toast(`SOS sent to ${contact.name}`);
+
+    alert(
+      `SOS SENT\n\n` +
+      `Recipient: ${contact.name}\n` +
+      `Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}\n\n` +
+      `Source: Raspberry Pi GPS\n` +
+      `Telegram message sent successfully.`
+    );
+
+  } catch (error) {
+    console.error("SOS request error:", error);
+    alert("Gagal terhubung ke SOS server.");
+  }
 };
 
 $("#editContact").onclick = () => {
