@@ -314,21 +314,20 @@ async function addReminder() {
   if (!text) return;
 
   const category = prompt(
-    "Category:\n1. Medication\n2. Meal\n3. Appointment\n4. Rest\n5. Other",
-    "Medication"
+    "Category:\n1. People\n2. Places\n3. Objects\n4. Activities",
+    "4"
   );
 
   if (!category) return;
 
   const categoryMap = {
-    "1": "Medication",
-    "2": "Meal",
-    "3": "Appointment",
-    "4": "Rest",
-    "5": "Other"
+    "1": "People",
+    "2": "Places",
+    "3": "Objects",
+    "4": "Activities"
   };
 
-  const reminderType = categoryMap[category] || category;
+  const reminderType = categoryMap[category] || "Activities";
 
   const time = prompt("Jam (HH:MM)", "08:00");
   if (!time) return;
@@ -399,7 +398,7 @@ function renderMemories(filter = "All") {
   desc: r.reminder_type || "Other",
   time: r.reminder_time || r.time || "--:--",
   location: "",
-  itemType: "Activities"
+  itemType: r.reminder_type || "Activities"
 }));
 
   let items = [
