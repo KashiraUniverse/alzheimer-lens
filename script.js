@@ -340,6 +340,44 @@ $("#registerForm").onsubmit = async e => {
   }, 1200);
 };
 
+async function getRecognitionResult() {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/device_status?id=eq.1&select=recognized_name,recognized_relation,recognition_confidence,updated_at`,
+      {
+        headers: {
+          "apikey": SUPABASE_KEY
+        }
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+
+    if (!data.length) return null;
+
+    return data[0];
+  } catch (error) {
+    console.error("Recognition fetch error:", error);
+    return null;
+  }
+}
+
+async function waitForRecognition(maxAttempts = 8, interval = 1000) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const data = await getRecognitionResult();
+
+    if (data && data.recognized_name) {
+      return data;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, interval));
+  }
+
+  return null;
+}
+
 $("#scanBtn").onclick = async () => {
   const scanner = $("#scanner");
   const result = $("#recognitionResult");
