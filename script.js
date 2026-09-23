@@ -207,14 +207,14 @@ async function loadPeopleFromSupabase() {
     const data = await response.json();
 
     people = data.map(p => ({
-  id: "P" + p.id,
-  name: p.name,
-  relationship: p.relation,
-  phone: p.phone || "",
-  photo: p.photo_url || null,
-  telegramChatId: p.telegram_chat_id || "",
-  sync: "Synced"
-}));
+      id: "P" + p.id,
+      name: p.name,
+      relationship: p.relation,
+      phone: p.phone || "",
+      photo: p.photo_url || null,
+      sync: "Synced"
+    }));
+
     save();
     await renderPeople();
     console.log("People from Supabase:", people);
@@ -377,131 +377,42 @@ $("#scanBtn").onclick = () => {
   }, 1800);
 };
 
-/* =========================
-   GPS — RASPBERRY PI → SUPABASE
-   ========================= */
-
-async function getGPS() {
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/gps_status?id=eq.1&select=*`,
-      {
-        headers: {
-          "apikey": SUPABASE_KEY
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.error(
-        "Gagal mengambil GPS Raspberry Pi:",
-        response.status
-      );
-
-      setDemoGPS();
-      return;
-    }
-
-    const data = await response.json();
-
-    if (!data.length || !data[0].valid) {
-      console.warn(
-        "GPS Raspberry Pi belum valid"
-      );
-
-      setDemoGPS();
-      return;
-    }
-
-    const gps = data[0];
-
-    currentLocation = {
-      lat: Number(gps.lat),
-      lng: Number(gps.lng)
-    };
-
-    updateGPSUI();
-
-    console.log(
-      "✓ GPS Raspberry Pi:",
-      currentLocation.lat,
-      currentLocation.lng
-    );
-
-  } catch (error) {
-    console.error(
-      "GPS Supabase error:",
-      error
-    );
-
+function getGPS() {
+  if (!navigator.geolocation) {
     setDemoGPS();
+    return;
   }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      currentLocation = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+      updateGPSUI();
+      toast("GPS location updated");
+    },
+    () => {
+      setDemoGPS();
+      toast("GPS unavailable — using Demo Location");
+    },
+    {enableHighAccuracy:true, timeout:8000}
+  );
 }
 
-
 function setDemoGPS() {
-  currentLocation = {
-    lat: -6.2088,
-    lng: 106.8456
-  };
-
+  currentLocation = {lat:-6.2088, lng:106.8456};
   updateGPSUI(true);
 }
 
-
-function updateGPSUI(demo = false) {
-  const text =
-    demo
-      ? "Demo Location"
-      : "Raspberry Pi GPS";
-
-  const c =
-    `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`;
-
+function updateGPSUI(demo=false) {
+  const text = demo ? "Demo Location" : "Current location";
+  const c = `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`;
   $("#locationText").textContent = text;
-
-  $("#coords").textContent =
-    c +
-    (demo
-      ? " · Demo coordinates"
-      : " · Pi GPS");
-
+  $("#coords").textContent = c + (demo ? " · Demo coordinates" : " · Browser GPS");
   $("#safetyLocation").textContent = text;
-
-  $("#safetyCoords").textContent =
-    c +
-    (demo
-      ? " · Demo coordinates"
-      : " · Pi GPS");
+  $("#safetyCoords").textContent = c + (demo ? " · Demo coordinates" : " · Browser GPS");
 }
 
-
-$("#refreshGps").onclick = async () => {
-  await getGPS();
-
-  if (
-    currentLocation &&
-    !$("#coords").textContent.includes(
-      "Demo coordinates"
-    )
-  ) {
-    toast("Raspberry Pi GPS updated");
-  }
-};
-
-
-$("#safetyGpsBtn").onclick = async () => {
-  await getGPS();
-
-  if (
-    currentLocation &&
-    !$("#safetyCoords").textContent.includes(
-      "Demo coordinates"
-    )
-  ) {
-    toast("Raspberry Pi GPS updated");
-  }
-};
+$("#refreshGps").onclick = getGPS;
+$("#safetyGpsBtn").onclick = getGPS;
 
 $$(".filter").forEach(b => b.onclick = () => {
   $$(".filter").forEach(x => x.classList.remove("active"));
@@ -517,71 +428,31 @@ $("#testConnection").onclick = () => {
   }, 900);
 };
 
-$("#sosBtn").onclick = async () => {
-  if (!confirm("Activate Emergency SOS?")) {
-    return;
-  }
+$("#sosBtn").onclick = () => {
+  if (!confirm("Activate Emergency SOS? Demo Mode will not send a real SMS or call.")) return;
 
-  // Ambil GPS terbaru dari Raspberry Pi
-  await getGPS();
+  const finish = () => {
+    const c = currentLocation
+      ? `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`
+      : "Demo location";
+    toast("SOS alert simulated successfully");
+    alert(`SOS ACTIVATED\n\nPrimary contact: Maria\nLocation: ${c}\n\nDemo Mode: no real SMS or call was sent.`);
+  };
 
-  if (!currentLocation) {
-    alert("GPS Raspberry Pi belum tersedia.");
-    return;
-  }
-
-  // Cari kontak yang punya Telegram Chat ID
-  const contact = people.find(
-    p => p.telegramChatId
-  );
-
-  if (!contact) {
-    alert("Belum ada kontak Telegram yang terdaftar.");
-    return;
-  }
-
-  const lat = currentLocation.lat;
-  const lng = currentLocation.lng;
-
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/send-sos`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_KEY
-        },
-        body: JSON.stringify({
-          chat_id: contact.telegramChatId,
-          name: contact.name,
-          lat: lat,
-          lng: lng
-        })
-      }
+  if (currentLocation) finish();
+  else if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      p => {
+        currentLocation = {lat:p.coords.latitude, lng:p.coords.longitude};
+        updateGPSUI();
+        finish();
+      },
+      () => { setDemoGPS(); finish(); },
+      {timeout:5000}
     );
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      console.error("SOS Telegram error:", data);
-      alert("SOS gagal dikirim ke Telegram.");
-      return;
-    }
-
-    toast(`SOS sent to ${contact.name}`);
-
-    alert(
-      `SOS SENT\n\n` +
-      `Recipient: ${contact.name}\n` +
-      `Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}\n\n` +
-      `Source: Raspberry Pi GPS\n` +
-      `Telegram message sent successfully.`
-    );
-
-  } catch (error) {
-    console.error("SOS request error:", error);
-    alert("Gagal terhubung ke SOS server.");
+  } else {
+    setDemoGPS();
+    finish();
   }
 };
 
@@ -598,10 +469,10 @@ renderMemories();
 renderLatest();
 loadPeopleFromSupabase();
 loadDeviceStatus();
-getGPS();
-
 setInterval(loadDeviceStatus, 5000);
-setInterval(getGPS, 5000);
+
+loadDeviceStatus();
+setInterval(loadDeviceStatus, 5000);
 
 if (new URLSearchParams(window.location.search).get("connect") === "true") {
   startDeviceSession();
