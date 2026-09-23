@@ -395,12 +395,12 @@ function renderMemories(filter = "All") {
   const reminderItems = window.allReminders || [];
 
   const formattedReminders = reminderItems.map(r => ({
-    title: r.title || r.text || "Reminder",
-    desc: r.reminder_type || "Other",
-    time: r.reminder_time || r.time || "--:--",
-    location: "",
-    itemType: "Reminders"
-  }));
+  title: r.title || r.text || "Reminder",
+  desc: r.reminder_type || "Other",
+  time: r.reminder_time || r.time || "--:--",
+  location: "",
+  itemType: "Activities"
+}));
 
   let items = [
     ...memoryItems,
