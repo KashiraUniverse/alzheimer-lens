@@ -43,7 +43,28 @@ const defaultPeople = [
 const defaultMemories = [
   {type:"People", title:"Maria detected", desc:"Caregiver", time:"10:42 AM", location:"Living room"},
   {type:"Places", title:"Living room recognized", desc:"Familiar place", time:"11:15 AM", location:"Home"},
-  {type:"Objects", title:"Medicine detected", desc:"Reminder item", time:"12:03 PM", location:"Kitchen"}
+  {type:"Objects", title:"Medicine detected", desc:"Reminder item", time:"12:03 PM", location:"Kitchen"},
+  {
+    type: "Activities",
+    title: "Having lunch",
+    desc: "Meal activity",
+    time: "12:00 PM",
+    location: "Dining room"
+  },
+  {
+    type: "Activities",
+    title: "Taking medicine",
+    desc: "Medication activity",
+    time: "08:00 AM",
+    location: "Bedroom"
+  },
+  {
+    type: "Activities",
+    title: "Drinking water",
+    desc: "Hydration activity",
+    time: "10:30 AM",
+    location: "Kitchen"
+  }
 ];
 
 let people = JSON.parse(localStorage.getItem("alzheimerPeople") || "null") || defaultPeople;
