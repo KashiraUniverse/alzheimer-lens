@@ -302,6 +302,9 @@ async function addReminder() {
           id: Date.now(),
           text: text,
           time: time
+          reminder_type: "Medication",
+          reminder_time: time,
+          enabled: true
         })
       }
     );
