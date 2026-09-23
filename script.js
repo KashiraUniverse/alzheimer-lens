@@ -87,6 +87,11 @@ async function loadReminders() {
     const reminders = await response.json();
 
     console.log("✓ Reminders:", reminders);
+     window.allReminders = reminders;
+
+renderMemories(
+  document.querySelector(".filter.active")?.dataset.filter || "All"
+);
 
     let reminderList = $("#reminderList");
 
@@ -379,20 +384,54 @@ if (memoryList && !$("#addReminderBtn")) {
   memoryList.parentElement.insertBefore(btn, memoryList);
 }
 
-function renderMemories(filter="All") {
+function renderMemories(filter = "All") {
   const list = $("#memoryList");
-  const items = filter === "All" ? memories : memories.filter(m => m.type === filter);
+  if (!list) return;
+
+  const memoryItems = memories.map(m => ({
+    ...m,
+    itemType: m.type || "People"
+  }));
+
+  const reminderItems = window.allReminders || [];
+
+  const formattedReminders = reminderItems.map(r => ({
+    title: r.title || r.text || "Reminder",
+    desc: r.reminder_type || "Other",
+    time: r.reminder_time || r.time || "--:--",
+    location: "",
+    itemType: "Reminders"
+  }));
+
+  let items = [
+    ...memoryItems,
+    ...formattedReminders
+  ];
+
+  if (filter !== "All") {
+    items = items.filter(m => m.itemType === filter);
+  }
 
   list.innerHTML = items.map(m => `
     <div class="timeline-item">
       <b>${escapeHtml(m.title)}</b>
       <span>${escapeHtml(m.desc)}</span>
-      <small>${escapeHtml(m.time)} · ${escapeHtml(m.location || "Unknown location")}</small>
+      <small>
+        ${escapeHtml(m.time)}
+        ${m.location ? " · " + escapeHtml(m.location) : ""}
+      </small>
     </div>
-  `).join("") || `<div class="feature-card"><span class="muted">No memories in this category yet.</span></div>`;
+  `).join("") || `
+    <div class="feature-card">
+      <span class="muted">No memories in this category yet.</span>
+    </div>
+  `;
 
-  $("#homeActivity").innerHTML = memories.slice(0,3).map(m =>
-    `<div class="timeline-item"><b>${escapeHtml(m.title)}</b><span>${escapeHtml(m.time)} · ${escapeHtml(m.location || "Unknown location")}</span></div>`
+  $("#homeActivity").innerHTML = memories.slice(0, 3).map(m =>
+    `<div class="timeline-item">
+      <b>${escapeHtml(m.title)}</b>
+      <span>${escapeHtml(m.time)} · ${escapeHtml(m.location || "Unknown location")}</span>
+    </div>`
   ).join("");
 }
 
