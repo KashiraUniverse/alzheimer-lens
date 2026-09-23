@@ -429,31 +429,71 @@ $("#testConnection").onclick = () => {
   }, 900);
 };
 
-$("#sosBtn").onclick = () => {
-  if (!confirm("Activate Emergency SOS? Demo Mode will not send a real SMS or call.")) return;
+$("#sosBtn").onclick = async () => {
+  if (!confirm("Activate Emergency SOS?")) {
+    return;
+  }
 
-  const finish = () => {
-    const c = currentLocation
-      ? `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`
-      : "Demo location";
-    toast("SOS alert simulated successfully");
-    alert(`SOS ACTIVATED\n\nPrimary contact: Maria\nLocation: ${c}\n\nDemo Mode: no real SMS or call was sent.`);
-  };
+  // Ambil GPS terbaru dari Raspberry Pi
+  await getGPS();
 
-  if (currentLocation) finish();
-  else if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      p => {
-        currentLocation = {lat:p.coords.latitude, lng:p.coords.longitude};
-        updateGPSUI();
-        finish();
-      },
-      () => { setDemoGPS(); finish(); },
-      {timeout:5000}
+  if (!currentLocation) {
+    alert("GPS Raspberry Pi belum tersedia.");
+    return;
+  }
+
+  // Nelson adalah kontak utama SOS
+  const contact = people.find(
+    p => p.name === "Nelson" && p.telegramChatId
+  );
+
+  if (!contact) {
+    alert("Kontak Telegram Nelson belum tersedia.");
+    return;
+  }
+
+  const lat = currentLocation.lat;
+  const lng = currentLocation.lng;
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/send-sos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          chat_id: contact.telegramChatId,
+          name: contact.name,
+          lat: lat,
+          lng: lng
+        })
+      }
     );
-  } else {
-    setDemoGPS();
-    finish();
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      console.error("SOS Telegram error:", data);
+      alert("SOS gagal dikirim ke Telegram.");
+      return;
+    }
+
+    toast(`SOS sent to ${contact.name}`);
+
+    alert(
+      `SOS SENT\n\n` +
+      `Recipient: ${contact.name}\n` +
+      `Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}\n\n` +
+      `Source: Raspberry Pi GPS\n` +
+      `Telegram message sent successfully.`
+    );
+
+  } catch (error) {
+    console.error("SOS request error:", error);
+    alert("Gagal terhubung ke SOS server.");
   }
 };
 
