@@ -282,11 +282,8 @@ async function loadDeviceStatus() {
 }
 
 async function addReminder() {
-  const title = prompt("Reminder apa?");
-  if (!title) return;
-
-  const type = prompt("Type: Medication / Meal / Appointment", "Medication");
-  if (!type) return;
+  const text = prompt("Reminder apa?");
+  if (!text) return;
 
   const time = prompt("Jam (HH:MM)", "08:00");
   if (!time) return;
@@ -302,17 +299,16 @@ async function addReminder() {
           "Prefer": "return=representation"
         },
         body: JSON.stringify({
-          title: title,
-          reminder_type: type,
-          reminder_time: time,
-          enabled: true
+          text: text,
+          time: time
         })
       }
     );
 
     if (!response.ok) {
-      console.error("Gagal menyimpan reminder:", await response.text());
-      alert("Reminder gagal disimpan.");
+      const errorText = await response.text();
+      console.error("Reminder error:", errorText);
+      alert("Reminder gagal disimpan: " + errorText);
       return;
     }
 
@@ -321,6 +317,7 @@ async function addReminder() {
 
   } catch (error) {
     console.error("Reminder error:", error);
+    alert("Reminder gagal disimpan.");
   }
 }
 
