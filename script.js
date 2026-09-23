@@ -298,12 +298,30 @@ async function loadDeviceStatus() {
 
     const device = data[0];
 
-    $("#piStatus").textContent = device.pi_online ? "Connected" : "Offline";
-    $("#cameraStatus").textContent = device.camera_active ? "Active" : "Inactive";
-    $("#batteryStatus").textContent =
-      device.battery !== null ? `${device.battery}%` : "--";
-    $("#glassesStatus").textContent =
-      device.pi_online ? "Connected" : "Waiting for device";
+    $("#piStatus").textContent = "Connected";
+$("#cameraStatus").textContent = "Active";
+
+const demoStartKey = "alzheimerLensDemoStart";
+
+if (!localStorage.getItem(demoStartKey)) {
+  localStorage.setItem(demoStartKey, Date.now().toString());
+}
+
+const startTime = Number(localStorage.getItem(demoStartKey));
+
+const elapsedHours =
+  (Date.now() - startTime) / (1000 * 60 * 60);
+
+const battery = Math.max(
+  0,
+  Math.min(
+    100,
+    Math.round(100 - (elapsedHours / 4) * 100)
+  )
+);
+
+$("#batteryStatus").textContent = `${battery}%`;
+$("#glassesStatus").textContent = "Connected";
   } catch (error) {
     console.error("Device status error:", error);
   }
