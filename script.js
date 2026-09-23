@@ -299,13 +299,14 @@ async function addReminder() {
           "Prefer": "return=representation"
         },
         body: JSON.stringify({
-          id: Date.now(),
-          text: text,
-          time: time
-          reminder_type: "Medication",
-          reminder_time: time,
-          enabled: true
-        })
+  id: Date.now(),
+  title: text,
+  text: text,
+  time: time,
+  reminder_type: "Medication",
+  reminder_time: time,
+  enabled: true
+})
       }
     );
 
