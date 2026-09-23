@@ -517,32 +517,34 @@ $("#testConnection").onclick = () => {
   }, 900);
 };
 
-$("#sosBtn").onclick = () => {
-  if (!confirm("Activate Emergency SOS? Demo Mode will not send a real SMS or call.")) return;
-
-  const finish = () => {
-    const c = currentLocation
-      ? `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`
-      : "Demo location";
-    toast("SOS alert simulated successfully");
-    alert(`SOS ACTIVATED\n\nPrimary contact: Maria\nLocation: ${c}\n\nDemo Mode: no real SMS or call was sent.`);
-  };
-
-  if (currentLocation) finish();
-  else if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      p => {
-        currentLocation = {lat:p.coords.latitude, lng:p.coords.longitude};
-        updateGPSUI();
-        finish();
-      },
-      () => { setDemoGPS(); finish(); },
-      {timeout:5000}
-    );
-  } else {
-    setDemoGPS();
-    finish();
+$("#sosBtn").onclick = async () => {
+  if (!confirm("Activate Emergency SOS? Demo Mode will not send a real SMS or call.")) {
+    return;
   }
+
+  // Pastikan ambil lokasi terbaru dari Raspberry Pi
+  await getGPS();
+
+  const c = currentLocation
+    ? `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`
+    : "GPS unavailable";
+
+  if (!currentLocation) {
+    alert(
+      "SOS cannot get the Raspberry Pi GPS location yet."
+    );
+    return;
+  }
+
+  toast("SOS alert simulated successfully");
+
+  alert(
+    `SOS ACTIVATED\n\n` +
+    `Primary contact: Maria\n` +
+    `Location: ${c}\n\n` +
+    `Source: Raspberry Pi GPS\n` +
+    `Demo Mode: no real SMS or call was sent.`
+  );
 };
 
 $("#editContact").onclick = () => {
