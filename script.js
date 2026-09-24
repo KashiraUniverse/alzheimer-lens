@@ -301,24 +301,9 @@ async function loadDeviceStatus() {
     $("#piStatus").textContent = "Connected";
 $("#cameraStatus").textContent = "Active";
 
-const demoStartKey = "alzheimerLensDemoStart";
+const battery = 100;
 
-if (!localStorage.getItem(demoStartKey)) {
-  localStorage.setItem(demoStartKey, Date.now().toString());
-}
-
-const startTime = Number(localStorage.getItem(demoStartKey));
-
-const elapsedHours =
-  (Date.now() - startTime) / (1000 * 60 * 60);
-
-const battery = Math.max(
-  0,
-  Math.min(
-    100,
-    Math.round(100 - elapsedHours * 20)
-  )
-);
+$("#batteryStatus").textContent = `${battery}%`;
 
 $("#batteryStatus").textContent = `${battery}%`;
 $("#glassesStatus").textContent = "Connected";
